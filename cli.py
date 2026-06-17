@@ -1,0 +1,62 @@
+"""单位换算命令行接口。"""
+
+import argparse
+import sys
+
+from converter import convert, get_supported_units, get_categories
+
+
+def main():
+    parser = argparse.ArgumentParser(description="单位换算服务 - 支持长度、重量、温度、体积、时间换算")
+    subparsers = parser.add_subparsers(dest="command", help="可用命令")
+
+    convert_parser = subparsers.add_parser("convert", help="执行单位换算")
+    convert_parser.add_argument("value", type=float, help="要转换的数值")
+    convert_parser.add_argument("from_unit", help="源单位")
+    convert_parser.add_argument("to_unit", help="目标单位")
+
+    subparsers.add_parser("units", help="列出所有支持的单位")
+
+    units_parser = subparsers.add_parser("units-by-category", help="按类别列出支持的单位")
+    units_parser.add_argument("category", help="类别名称 (length, weight, volume, time, temperature)")
+
+    subparsers.add_parser("categories", help="列出所有支持的类别")
+
+    args = parser.parse_args()
+
+    if args.command == "convert":
+        try:
+            result = convert(args.value, args.from_unit, args.to_unit)
+            print(f"{args.value} {args.from_unit} = {result} {args.to_unit}")
+        except ValueError as e:
+            print(f"错误: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    elif args.command == "units":
+        units = get_supported_units()
+        for category, unit_list in units.items():
+            print(f"\n{category}:")
+            print(f"  {', '.join(unit_list[:10])}..." if len(unit_list) > 10 else f"  {', '.join(unit_list)}")
+
+    elif args.command == "units-by-category":
+        try:
+            units = get_supported_units(args.category)
+            for category, unit_list in units.items():
+                print(f"\n{category}:")
+                print(f"  {', '.join(unit_list)}")
+        except ValueError as e:
+            print(f"错误: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    elif args.command == "categories":
+        categories = get_categories()
+        print("支持的类别:")
+        for cat in categories:
+            print(f"  - {cat}")
+
+    else:
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    main()
