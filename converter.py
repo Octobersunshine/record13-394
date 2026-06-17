@@ -1,134 +1,149 @@
-"""单位换算服务模块，支持长度、重量、温度、体积、时间等单位互转。"""
+"""单位换算服务模块，支持长度、重量、温度、体积、时间等单位互转。
 
-from typing import Dict, Tuple
+使用 Decimal 进行高精度计算，避免浮点数精度丢失问题。
+"""
+
+from decimal import Decimal, getcontext, ROUND_HALF_UP
+from typing import Dict, Optional, Union
 
 
-_LENGTH_UNITS: Dict[str, float] = {
-    "meter": 1.0,
-    "m": 1.0,
-    "kilometer": 1000.0,
-    "km": 1000.0,
-    "centimeter": 0.01,
-    "cm": 0.01,
-    "millimeter": 0.001,
-    "mm": 0.001,
-    "micrometer": 1e-6,
-    "um": 1e-6,
-    "nanometer": 1e-9,
-    "nm": 1e-9,
-    "mile": 1609.344,
-    "mi": 1609.344,
-    "yard": 0.9144,
-    "yd": 0.9144,
-    "foot": 0.3048,
-    "ft": 0.3048,
-    "inch": 0.0254,
-    "in": 0.0254,
-    "nautical_mile": 1852.0,
-    "nmi": 1852.0,
-    "furlong": 201.168,
-    "fur": 201.168,
-    "chain": 20.1168,
-    "ch": 20.1168,
-    "rod": 5.0292,
-    "rd": 5.0292,
-    "fathom": 1.8288,
-    "ftm": 1.8288,
+getcontext().prec = 50
+
+Number = Union[float, int, str, Decimal]
+
+
+def _to_decimal(value: Number) -> Decimal:
+    if isinstance(value, Decimal):
+        return value
+    return Decimal(str(value))
+
+
+_LENGTH_UNITS: Dict[str, Decimal] = {
+    "meter": Decimal("1"),
+    "m": Decimal("1"),
+    "kilometer": Decimal("1000"),
+    "km": Decimal("1000"),
+    "centimeter": Decimal("0.01"),
+    "cm": Decimal("0.01"),
+    "millimeter": Decimal("0.001"),
+    "mm": Decimal("0.001"),
+    "micrometer": Decimal("0.000001"),
+    "um": Decimal("0.000001"),
+    "nanometer": Decimal("0.000000001"),
+    "nm": Decimal("0.000000001"),
+    "mile": Decimal("1609.344"),
+    "mi": Decimal("1609.344"),
+    "yard": Decimal("0.9144"),
+    "yd": Decimal("0.9144"),
+    "foot": Decimal("0.3048"),
+    "ft": Decimal("0.3048"),
+    "inch": Decimal("0.0254"),
+    "in": Decimal("0.0254"),
+    "nautical_mile": Decimal("1852"),
+    "nmi": Decimal("1852"),
+    "furlong": Decimal("201.168"),
+    "fur": Decimal("201.168"),
+    "chain": Decimal("20.1168"),
+    "ch": Decimal("20.1168"),
+    "rod": Decimal("5.0292"),
+    "rd": Decimal("5.0292"),
+    "fathom": Decimal("1.8288"),
+    "ftm": Decimal("1.8288"),
 }
 
-_WEIGHT_UNITS: Dict[str, float] = {
-    "kilogram": 1.0,
-    "kg": 1.0,
-    "gram": 0.001,
-    "g": 0.001,
-    "milligram": 1e-6,
-    "mg": 1e-6,
-    "microgram": 1e-9,
-    "ug": 1e-9,
-    "metric_ton": 1000.0,
-    "t": 1000.0,
-    "pound": 0.45359237,
-    "lb": 0.45359237,
-    "ounce": 0.028349523125,
-    "oz": 0.028349523125,
-    "stone": 6.35029318,
-    "st": 6.35029318,
-    "ton_us": 907.18474,
-    "short_ton": 907.18474,
-    "ton_uk": 1016.0469088,
-    "long_ton": 1016.0469088,
-    "carat": 0.0002,
-    "ct": 0.0002,
+_WEIGHT_UNITS: Dict[str, Decimal] = {
+    "kilogram": Decimal("1"),
+    "kg": Decimal("1"),
+    "gram": Decimal("0.001"),
+    "g": Decimal("0.001"),
+    "milligram": Decimal("0.000001"),
+    "mg": Decimal("0.000001"),
+    "microgram": Decimal("0.000000001"),
+    "ug": Decimal("0.000000001"),
+    "metric_ton": Decimal("1000"),
+    "t": Decimal("1000"),
+    "pound": Decimal("0.45359237"),
+    "lb": Decimal("0.45359237"),
+    "ounce": Decimal("0.028349523125"),
+    "oz": Decimal("0.028349523125"),
+    "stone": Decimal("6.35029318"),
+    "st": Decimal("6.35029318"),
+    "ton_us": Decimal("907.18474"),
+    "short_ton": Decimal("907.18474"),
+    "ton_uk": Decimal("1016.0469088"),
+    "long_ton": Decimal("1016.0469088"),
+    "carat": Decimal("0.0002"),
+    "ct": Decimal("0.0002"),
 }
 
-_VOLUME_UNITS: Dict[str, float] = {
-    "cubic_meter": 1.0,
-    "m3": 1.0,
-    "liter": 0.001,
-    "L": 0.001,
-    "l": 0.001,
-    "milliliter": 1e-6,
-    "mL": 1e-6,
-    "ml": 1e-6,
-    "cubic_centimeter": 1e-6,
-    "cm3": 1e-6,
-    "cc": 1e-6,
-    "cubic_millimeter": 1e-9,
-    "mm3": 1e-9,
-    "cubic_kilometer": 1e9,
-    "km3": 1e9,
-    "gallon_us": 0.003785411784,
-    "gal_us": 0.003785411784,
-    "gallon_uk": 0.00454609,
-    "gal_uk": 0.00454609,
-    "quart_us": 0.000946352946,
-    "qt_us": 0.000946352946,
-    "pint_us": 0.000473176473,
-    "pt_us": 0.000473176473,
-    "cup_us": 0.0002365882365,
-    "fluid_ounce_us": 2.95735295625e-5,
-    "fl_oz_us": 2.95735295625e-5,
-    "tablespoon_us": 1.478676478125e-5,
-    "tbsp_us": 1.478676478125e-5,
-    "teaspoon_us": 4.92892159375e-6,
-    "tsp_us": 4.92892159375e-6,
-    "cubic_foot": 0.028316846592,
-    "ft3": 0.028316846592,
-    "cubic_inch": 1.6387064e-5,
-    "in3": 1.6387064e-5,
-    "cubic_yard": 0.764554857984,
-    "yd3": 0.764554857984,
+_VOLUME_UNITS: Dict[str, Decimal] = {
+    "cubic_meter": Decimal("1"),
+    "m3": Decimal("1"),
+    "liter": Decimal("0.001"),
+    "L": Decimal("0.001"),
+    "l": Decimal("0.001"),
+    "milliliter": Decimal("0.000001"),
+    "mL": Decimal("0.000001"),
+    "ml": Decimal("0.000001"),
+    "cubic_centimeter": Decimal("0.000001"),
+    "cm3": Decimal("0.000001"),
+    "cc": Decimal("0.000001"),
+    "cubic_millimeter": Decimal("0.000000001"),
+    "mm3": Decimal("0.000000001"),
+    "cubic_kilometer": Decimal("1000000000"),
+    "km3": Decimal("1000000000"),
+    "gallon_us": Decimal("0.003785411784"),
+    "gal_us": Decimal("0.003785411784"),
+    "gallon_uk": Decimal("0.00454609"),
+    "gal_uk": Decimal("0.00454609"),
+    "quart_us": Decimal("0.000946352946"),
+    "qt_us": Decimal("0.000946352946"),
+    "pint_us": Decimal("0.000473176473"),
+    "pt_us": Decimal("0.000473176473"),
+    "cup_us": Decimal("0.0002365882365"),
+    "fluid_ounce_us": Decimal("0.0000295735295625"),
+    "fl_oz_us": Decimal("0.0000295735295625"),
+    "tablespoon_us": Decimal("0.00001478676478125"),
+    "tbsp_us": Decimal("0.00001478676478125"),
+    "teaspoon_us": Decimal("0.00000492892159375"),
+    "tsp_us": Decimal("0.00000492892159375"),
+    "cubic_foot": Decimal("0.028316846592"),
+    "ft3": Decimal("0.028316846592"),
+    "cubic_inch": Decimal("0.000016387064"),
+    "in3": Decimal("0.000016387064"),
+    "cubic_yard": Decimal("0.764554857984"),
+    "yd3": Decimal("0.764554857984"),
 }
 
-_TIME_UNITS: Dict[str, float] = {
-    "second": 1.0,
-    "s": 1.0,
-    "sec": 1.0,
-    "millisecond": 0.001,
-    "ms": 0.001,
-    "microsecond": 1e-6,
-    "us": 1e-6,
-    "nanosecond": 1e-9,
-    "ns": 1e-9,
-    "minute": 60.0,
-    "min": 60.0,
-    "hour": 3600.0,
-    "h": 3600.0,
-    "hr": 3600.0,
-    "day": 86400.0,
-    "d": 86400.0,
-    "week": 604800.0,
-    "wk": 604800.0,
-    "month": 2629746.0,
-    "mo": 2629746.0,
-    "year": 31556952.0,
-    "yr": 31556952.0,
-    "decade": 315569520.0,
-    "century": 3155695200.0,
-    "millennium": 31556952000.0,
+_TIME_UNITS: Dict[str, Decimal] = {
+    "second": Decimal("1"),
+    "s": Decimal("1"),
+    "sec": Decimal("1"),
+    "millisecond": Decimal("0.001"),
+    "ms": Decimal("0.001"),
+    "microsecond": Decimal("0.000001"),
+    "us": Decimal("0.000001"),
+    "nanosecond": Decimal("0.000000001"),
+    "ns": Decimal("0.000000001"),
+    "minute": Decimal("60"),
+    "min": Decimal("60"),
+    "hour": Decimal("3600"),
+    "h": Decimal("3600"),
+    "hr": Decimal("3600"),
+    "day": Decimal("86400"),
+    "d": Decimal("86400"),
+    "week": Decimal("604800"),
+    "wk": Decimal("604800"),
+    "month": Decimal("2629746"),
+    "mo": Decimal("2629746"),
+    "year": Decimal("31556952"),
+    "yr": Decimal("31556952"),
+    "decade": Decimal("315569520"),
+    "century": Decimal("3155695200"),
+    "millennium": Decimal("31556952000"),
 }
 
-_CATEGORIES: Dict[str, Dict[str, float]] = {
+_CATEGORIES: Dict[str, Dict[str, Decimal]] = {
     "length": _LENGTH_UNITS,
     "weight": _WEIGHT_UNITS,
     "mass": _WEIGHT_UNITS,
@@ -146,27 +161,27 @@ _CATEGORY_NAMES = {
 }
 
 
-def _celsius_to_fahrenheit(c: float) -> float:
-    return c * 9 / 5 + 32
+def _celsius_to_fahrenheit(c: Decimal) -> Decimal:
+    return c * Decimal("9") / Decimal("5") + Decimal("32")
 
 
-def _fahrenheit_to_celsius(f: float) -> float:
-    return (f - 32) * 5 / 9
+def _fahrenheit_to_celsius(f: Decimal) -> Decimal:
+    return (f - Decimal("32")) * Decimal("5") / Decimal("9")
 
 
-def _celsius_to_kelvin(c: float) -> float:
-    return c + 273.15
+def _celsius_to_kelvin(c: Decimal) -> Decimal:
+    return c + Decimal("273.15")
 
 
-def _kelvin_to_celsius(k: float) -> float:
-    return k - 273.15
+def _kelvin_to_celsius(k: Decimal) -> Decimal:
+    return k - Decimal("273.15")
 
 
-def _fahrenheit_to_kelvin(f: float) -> float:
+def _fahrenheit_to_kelvin(f: Decimal) -> Decimal:
     return _celsius_to_kelvin(_fahrenheit_to_celsius(f))
 
 
-def _kelvin_to_fahrenheit(k: float) -> float:
+def _kelvin_to_fahrenheit(k: Decimal) -> Decimal:
     return _celsius_to_fahrenheit(_kelvin_to_celsius(k))
 
 
@@ -217,21 +232,38 @@ def _get_temperature_unit(unit: str) -> str:
     return _TEMPERATURE_ALIASES[unit_norm]
 
 
-def convert(value: float, from_unit: str, to_unit: str) -> float:
+def _round_decimal(value: Decimal, decimal_places: Optional[int]) -> Decimal:
+    if decimal_places is None:
+        return value
+    quantize_str = "0." + "0" * decimal_places if decimal_places > 0 else "0"
+    return value.quantize(Decimal(quantize_str), rounding=ROUND_HALF_UP)
+
+
+def convert(
+    value: Number,
+    from_unit: str,
+    to_unit: str,
+    decimal_places: Optional[int] = None,
+) -> Decimal:
     """
     将数值从一个单位转换为另一个单位。
 
+    使用 Decimal 进行高精度计算，避免浮点数精度丢失。
+
     Args:
-        value: 要转换的数值
+        value: 要转换的数值（支持 float、int、str、Decimal）
         from_unit: 源单位
         to_unit: 目标单位
+        decimal_places: 可选，保留的小数位数，None 表示不四舍五入
 
     Returns:
-        转换后的数值
+        转换后的 Decimal 数值
 
     Raises:
         ValueError: 如果单位未知或单位类型不匹配
     """
+    value_dec = _to_decimal(value)
+
     from_category = _find_category(from_unit)
     to_category = _find_category(to_unit)
 
@@ -245,15 +277,15 @@ def convert(value: float, from_unit: str, to_unit: str) -> float:
         from_temp = _get_temperature_unit(from_unit)
         to_temp = _get_temperature_unit(to_unit)
         converter = _TEMPERATURE_CONVERTERS[(from_temp, to_temp)]
-        return converter(value)
+        result = converter(value_dec)
+    else:
+        units = _CATEGORIES[from_category]
+        from_norm = _normalize_unit(from_unit)
+        to_norm = _normalize_unit(to_unit)
+        base_value = value_dec * units[from_norm]
+        result = base_value / units[to_norm]
 
-    units = _CATEGORIES[from_category]
-    from_norm = _normalize_unit(from_unit)
-    to_norm = _normalize_unit(to_unit)
-
-    base_value = value * units[from_norm]
-    result = base_value / units[to_norm]
-    return result
+    return _round_decimal(result, decimal_places)
 
 
 def get_supported_units(category: str = None) -> Dict[str, list]:
@@ -285,3 +317,13 @@ def get_supported_units(category: str = None) -> Dict[str, list]:
 def get_categories() -> list:
     """获取所有支持的类别列表。"""
     return list(_CATEGORY_NAMES.keys())
+
+
+def set_precision(prec: int) -> None:
+    """
+    设置 Decimal 全局计算精度。
+
+    Args:
+        prec: 有效数字位数
+    """
+    getcontext().prec = prec

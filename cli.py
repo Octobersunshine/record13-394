@@ -11,9 +11,15 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="可用命令")
 
     convert_parser = subparsers.add_parser("convert", help="执行单位换算")
-    convert_parser.add_argument("value", type=float, help="要转换的数值")
+    convert_parser.add_argument("value", help="要转换的数值")
     convert_parser.add_argument("from_unit", help="源单位")
     convert_parser.add_argument("to_unit", help="目标单位")
+    convert_parser.add_argument(
+        "-d", "--decimal-places",
+        type=int,
+        default=None,
+        help="保留的小数位数，默认不四舍五入",
+    )
 
     subparsers.add_parser("units", help="列出所有支持的单位")
 
@@ -26,7 +32,7 @@ def main():
 
     if args.command == "convert":
         try:
-            result = convert(args.value, args.from_unit, args.to_unit)
+            result = convert(args.value, args.from_unit, args.to_unit, decimal_places=args.decimal_places)
             print(f"{args.value} {args.from_unit} = {result} {args.to_unit}")
         except ValueError as e:
             print(f"错误: {e}", file=sys.stderr)
