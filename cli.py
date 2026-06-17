@@ -3,7 +3,7 @@
 import argparse
 import sys
 
-from converter import convert, get_supported_units, get_categories
+from converter import convert, get_supported_units, get_categories, get_common_conversions, quick_convert, search_conversions
 
 
 def main():
@@ -27,6 +27,22 @@ def main():
     units_parser.add_argument("category", help="类别名称 (length, weight, volume, time, temperature)")
 
     subparsers.add_parser("categories", help="列出所有支持的类别")
+
+    common_parser = subparsers.add_parser("common", help="列出常用转换组合")
+    common_parser.add_argument("-c", "--category", default=None, help="按类别过滤")
+
+    quick_parser = subparsers.add_parser("quick", help="快速执行常用转换")
+    quick_parser.add_argument("name", help="转换名称（如 '英里转公里'）")
+    quick_parser.add_argument("-v", "--value", default=None, help="自定义数值，不填则使用默认值")
+    quick_parser.add_argument(
+        "-d", "--decimal-places",
+        type=int,
+        default=None,
+        help="保留的小数位数，默认不四舍五入",
+    )
+
+    search_parser = subparsers.add_parser("search", help="搜索常用转换组合")
+    search_parser.add_argument("keyword", help="搜索关键词")
 
     args = parser.parse_args()
 
@@ -59,6 +75,31 @@ def main():
         print("支持的类别:")
         for cat in categories:
             print(f"  - {cat}")
+
+    elif args.command == "common":
+        conversions = get_common_conversions(args.category)
+        category_label = f"（{args.category}）" if args.category else ""
+        print(f"常用转换组合{category_label}:")
+        for i, conv in enumerate(conversions, 1):
+            print(f"  {i:2d}. {conv['name']}: {conv['description']}")
+
+    elif args.command == "quick":
+        try:
+            result = quick_convert(args.name, value=args.value, decimal_places=args.decimal_places)
+            print(f"{result['name']}:")
+            print(f"  {result['value']} {result['from_unit']} = {result['result']} {result['to_unit']}")
+        except ValueError as e:
+            print(f"错误: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    elif args.command == "search":
+        results = search_conversions(args.keyword)
+        if results:
+            print(f"找到 {len(results)} 个匹配的转换组合:")
+            for i, conv in enumerate(results, 1):
+                print(f"  {i:2d}. {conv['name']}: {conv['description']}")
+        else:
+            print(f"未找到包含 '{args.keyword}' 的转换组合")
 
     else:
         parser.print_help()

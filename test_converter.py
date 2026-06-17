@@ -8,6 +8,9 @@ from converter import (
     get_supported_units,
     get_categories,
     set_precision,
+    get_common_conversions,
+    quick_convert,
+    search_conversions,
 )
 
 
@@ -363,6 +366,120 @@ class TestInputTypes(unittest.TestCase):
         """字符串输入避免 float 精度丢失。"""
         result = convert("0.1", "m", "mm")
         self.assertEqual(result, Decimal("100"))
+
+
+class TestCommonConversions(unittest.TestCase):
+    """常用转换组合测试。"""
+
+    def test_get_all_common_conversions(self):
+        conversions = get_common_conversions()
+        self.assertIsInstance(conversions, list)
+        self.assertGreater(len(conversions), 0)
+        for conv in conversions:
+            self.assertIn("name", conv)
+            self.assertIn("from_unit", conv)
+            self.assertIn("to_unit", conv)
+            self.assertIn("category", conv)
+            self.assertIn("description", conv)
+            self.assertIn("default_value", conv)
+
+    def test_get_common_conversions_by_category_length(self):
+        conversions = get_common_conversions("length")
+        self.assertGreater(len(conversions), 0)
+        for conv in conversions:
+            self.assertEqual(conv["category"], "length")
+
+    def test_get_common_conversions_by_category_weight(self):
+        conversions = get_common_conversions("weight")
+        self.assertGreater(len(conversions), 0)
+        for conv in conversions:
+            self.assertEqual(conv["category"], "weight")
+
+    def test_get_common_conversions_by_category_temperature(self):
+        conversions = get_common_conversions("temperature")
+        self.assertGreater(len(conversions), 0)
+        for conv in conversions:
+            self.assertEqual(conv["category"], "temperature")
+
+    def test_get_common_conversions_by_category_volume(self):
+        conversions = get_common_conversions("volume")
+        self.assertGreater(len(conversions), 0)
+        for conv in conversions:
+            self.assertEqual(conv["category"], "volume")
+
+    def test_get_common_conversions_by_category_time(self):
+        conversions = get_common_conversions("time")
+        self.assertGreater(len(conversions), 0)
+        for conv in conversions:
+            self.assertEqual(conv["category"], "time")
+
+    def test_get_common_conversions_unknown_category(self):
+        conversions = get_common_conversions("unknown")
+        self.assertEqual(conversions, [])
+
+
+class TestQuickConvert(unittest.TestCase):
+    """快速转换测试。"""
+
+    def test_quick_convert_mile_to_km(self):
+        result = quick_convert("英里转公里")
+        self.assertEqual(result["name"], "英里转公里")
+        self.assertEqual(result["from_unit"], "mile")
+        self.assertEqual(result["to_unit"], "km")
+        self.assertEqual(result["value"], Decimal("1"))
+        self.assertEqual(result["result"], Decimal("1.609344"))
+        self.assertEqual(result["category"], "length")
+
+    def test_quick_convert_with_custom_value(self):
+        result = quick_convert("英里转公里", value=5)
+        self.assertEqual(result["value"], Decimal("5"))
+        self.assertEqual(result["result"], Decimal("8.04672"))
+
+    def test_quick_convert_temperature(self):
+        result = quick_convert("摄氏度转华氏度")
+        self.assertEqual(result["name"], "摄氏度转华氏度")
+        self.assertEqual(result["value"], Decimal("25"))
+        self.assertEqual(result["result"], Decimal("77"))
+
+    def test_quick_convert_with_decimal_places(self):
+        result = quick_convert("米转英尺", decimal_places=2)
+        self.assertEqual(result["result"], Decimal("3.28"))
+
+    def test_quick_convert_unknown_name(self):
+        with self.assertRaises(ValueError):
+            quick_convert("不存在的转换")
+
+    def test_quick_convert_with_string_value(self):
+        result = quick_convert("磅转千克", value="2.5")
+        self.assertEqual(result["value"], Decimal("2.5"))
+        self.assertEqual(result["result"], Decimal("1.133980925"))
+
+
+class TestSearchConversions(unittest.TestCase):
+    """搜索转换组合测试。"""
+
+    def test_search_by_name(self):
+        results = search_conversions("英里")
+        self.assertGreater(len(results), 0)
+        for conv in results:
+            self.assertTrue("英里" in conv["name"])
+
+    def test_search_by_unit(self):
+        results = search_conversions("mile")
+        self.assertGreater(len(results), 0)
+
+    def test_search_by_description(self):
+        results = search_conversions("1 英里")
+        self.assertGreater(len(results), 0)
+
+    def test_search_no_results(self):
+        results = search_conversions("不存在的关键词xyz")
+        self.assertEqual(results, [])
+
+    def test_search_case_insensitive(self):
+        results1 = search_conversions("MILE")
+        results2 = search_conversions("mile")
+        self.assertEqual(len(results1), len(results2))
 
 
 if __name__ == "__main__":

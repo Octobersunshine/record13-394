@@ -4,7 +4,7 @@
 """
 
 from decimal import Decimal, getcontext, ROUND_HALF_UP
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 
 
 getcontext().prec = 50
@@ -327,3 +327,321 @@ def set_precision(prec: int) -> None:
         prec: 有效数字位数
     """
     getcontext().prec = prec
+
+
+_COMMON_CONVERSIONS: List[Dict] = [
+    {
+        "category": "length",
+        "name": "英里转公里",
+        "from_unit": "mile",
+        "to_unit": "km",
+        "default_value": 1,
+        "description": "1 英里 = 1.609344 公里",
+    },
+    {
+        "category": "length",
+        "name": "公里转英里",
+        "from_unit": "km",
+        "to_unit": "mile",
+        "default_value": 1,
+        "description": "1 公里 ≈ 0.621371 英里",
+    },
+    {
+        "category": "length",
+        "name": "英尺转米",
+        "from_unit": "foot",
+        "to_unit": "meter",
+        "default_value": 1,
+        "description": "1 英尺 = 0.3048 米",
+    },
+    {
+        "category": "length",
+        "name": "米转英尺",
+        "from_unit": "meter",
+        "to_unit": "foot",
+        "default_value": 1,
+        "description": "1 米 ≈ 3.28084 英尺",
+    },
+    {
+        "category": "length",
+        "name": "英寸转厘米",
+        "from_unit": "inch",
+        "to_unit": "cm",
+        "default_value": 1,
+        "description": "1 英寸 = 2.54 厘米",
+    },
+    {
+        "category": "length",
+        "name": "厘米转英寸",
+        "from_unit": "cm",
+        "to_unit": "inch",
+        "default_value": 1,
+        "description": "1 厘米 ≈ 0.393701 英寸",
+    },
+    {
+        "category": "length",
+        "name": "码转米",
+        "from_unit": "yard",
+        "to_unit": "m",
+        "default_value": 1,
+        "description": "1 码 = 0.9144 米",
+    },
+    {
+        "category": "weight",
+        "name": "磅转千克",
+        "from_unit": "pound",
+        "to_unit": "kg",
+        "default_value": 1,
+        "description": "1 磅 ≈ 0.453592 千克",
+    },
+    {
+        "category": "weight",
+        "name": "千克转磅",
+        "from_unit": "kg",
+        "to_unit": "pound",
+        "default_value": 1,
+        "description": "1 千克 ≈ 2.20462 磅",
+    },
+    {
+        "category": "weight",
+        "name": "盎司转克",
+        "from_unit": "ounce",
+        "to_unit": "g",
+        "default_value": 1,
+        "description": "1 盎司 ≈ 28.3495 克",
+    },
+    {
+        "category": "weight",
+        "name": "克转盎司",
+        "from_unit": "g",
+        "to_unit": "ounce",
+        "default_value": 1,
+        "description": "1 克 ≈ 0.035274 盎司",
+    },
+    {
+        "category": "weight",
+        "name": "英石转磅",
+        "from_unit": "stone",
+        "to_unit": "lb",
+        "default_value": 1,
+        "description": "1 英石 = 14 磅",
+    },
+    {
+        "category": "temperature",
+        "name": "摄氏度转华氏度",
+        "from_unit": "celsius",
+        "to_unit": "fahrenheit",
+        "default_value": 25,
+        "description": "25°C = 77°F",
+    },
+    {
+        "category": "temperature",
+        "name": "华氏度转摄氏度",
+        "from_unit": "fahrenheit",
+        "to_unit": "celsius",
+        "default_value": 77,
+        "description": "77°F = 25°C",
+    },
+    {
+        "category": "temperature",
+        "name": "摄氏度转开尔文",
+        "from_unit": "celsius",
+        "to_unit": "kelvin",
+        "default_value": 0,
+        "description": "0°C = 273.15 K",
+    },
+    {
+        "category": "temperature",
+        "name": "开尔文转摄氏度",
+        "from_unit": "kelvin",
+        "to_unit": "celsius",
+        "default_value": 273.15,
+        "description": "273.15 K = 0°C",
+    },
+    {
+        "category": "volume",
+        "name": "美制加仑转升",
+        "from_unit": "gallon_us",
+        "to_unit": "liter",
+        "default_value": 1,
+        "description": "1 美制加仑 ≈ 3.78541 升",
+    },
+    {
+        "category": "volume",
+        "name": "升转美制加仑",
+        "from_unit": "liter",
+        "to_unit": "gallon_us",
+        "default_value": 1,
+        "description": "1 升 ≈ 0.264172 美制加仑",
+    },
+    {
+        "category": "volume",
+        "name": "英制加仑转升",
+        "from_unit": "gallon_uk",
+        "to_unit": "L",
+        "default_value": 1,
+        "description": "1 英制加仑 ≈ 4.54609 升",
+    },
+    {
+        "category": "volume",
+        "name": "升转毫升",
+        "from_unit": "L",
+        "to_unit": "mL",
+        "default_value": 1,
+        "description": "1 升 = 1000 毫升",
+    },
+    {
+        "category": "volume",
+        "name": "立方英尺转立方米",
+        "from_unit": "ft3",
+        "to_unit": "m3",
+        "default_value": 1,
+        "description": "1 立方英尺 ≈ 0.0283168 立方米",
+    },
+    {
+        "category": "time",
+        "name": "小时转秒",
+        "from_unit": "hour",
+        "to_unit": "second",
+        "default_value": 1,
+        "description": "1 小时 = 3600 秒",
+    },
+    {
+        "category": "time",
+        "name": "天转小时",
+        "from_unit": "day",
+        "to_unit": "hour",
+        "default_value": 1,
+        "description": "1 天 = 24 小时",
+    },
+    {
+        "category": "time",
+        "name": "周转天",
+        "from_unit": "week",
+        "to_unit": "day",
+        "default_value": 1,
+        "description": "1 周 = 7 天",
+    },
+    {
+        "category": "time",
+        "name": "年转天",
+        "from_unit": "year",
+        "to_unit": "day",
+        "default_value": 1,
+        "description": "1 年 ≈ 365.2425 天",
+    },
+    {
+        "category": "length",
+        "name": "海里转公里",
+        "from_unit": "nautical_mile",
+        "to_unit": "km",
+        "default_value": 1,
+        "description": "1 海里 = 1.852 公里",
+    },
+    {
+        "category": "weight",
+        "name": "吨转千克",
+        "from_unit": "t",
+        "to_unit": "kg",
+        "default_value": 1,
+        "description": "1 吨 = 1000 千克",
+    },
+    {
+        "category": "length",
+        "name": "公里转米",
+        "from_unit": "km",
+        "to_unit": "m",
+        "default_value": 1,
+        "description": "1 公里 = 1000 米",
+    },
+    {
+        "category": "length",
+        "name": "米转厘米",
+        "from_unit": "m",
+        "to_unit": "cm",
+        "default_value": 1,
+        "description": "1 米 = 100 厘米",
+    },
+    {
+        "category": "weight",
+        "name": "千克转克",
+        "from_unit": "kg",
+        "to_unit": "g",
+        "default_value": 1,
+        "description": "1 千克 = 1000 克",
+    },
+]
+
+
+def get_common_conversions(category: str = None) -> List[Dict]:
+    """
+    获取常用转换组合列表。
+
+    Args:
+        category: 可选，按类别过滤（length, weight, volume, time, temperature）
+
+    Returns:
+        常用转换组合列表，每个元素包含 name、from_unit、to_unit、default_value、description 等信息
+    """
+    if category:
+        cat_norm = _normalize_unit(category)
+        return [conv for conv in _COMMON_CONVERSIONS if conv["category"] == cat_norm]
+    return list(_COMMON_CONVERSIONS)
+
+
+def quick_convert(
+    conversion_name: str,
+    value: Number = None,
+    decimal_places: Optional[int] = None,
+) -> Dict:
+    """
+    通过转换名称快速执行常用转换。
+
+    Args:
+        conversion_name: 转换名称（如 "英里转公里"、"摄氏度转华氏度"）
+        value: 可选，自定义数值。不填则使用默认值
+        decimal_places: 可选，保留的小数位数
+
+    Returns:
+        包含转换信息的字典：name、from_unit、to_unit、value、result、description
+
+    Raises:
+        ValueError: 如果找不到对应的转换名称
+    """
+    for conv in _COMMON_CONVERSIONS:
+        if conv["name"] == conversion_name:
+            val = value if value is not None else conv["default_value"]
+            result = convert(val, conv["from_unit"], conv["to_unit"], decimal_places=decimal_places)
+            return {
+                "name": conv["name"],
+                "from_unit": conv["from_unit"],
+                "to_unit": conv["to_unit"],
+                "value": _to_decimal(val),
+                "result": result,
+                "description": conv["description"],
+                "category": conv["category"],
+            }
+    raise ValueError(f"未找到常用转换: {conversion_name}")
+
+
+def search_conversions(keyword: str) -> List[Dict]:
+    """
+    按关键词搜索常用转换组合。
+
+    Args:
+        keyword: 搜索关键词
+
+    Returns:
+        匹配的转换组合列表
+    """
+    keyword_norm = keyword.strip().lower()
+    results = []
+    for conv in _COMMON_CONVERSIONS:
+        if (
+            keyword_norm in conv["name"].lower()
+            or keyword_norm in conv["from_unit"].lower()
+            or keyword_norm in conv["to_unit"].lower()
+            or keyword_norm in conv["description"].lower()
+        ):
+            results.append(conv)
+    return results
